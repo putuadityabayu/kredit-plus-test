@@ -1,0 +1,12 @@
+*.env
+build/
+*.exp
+*.pem
+*.csr
+*-credentials.json
+.idea/*
+!.idea/copyright
+
+coverage
+config.json
+*~
