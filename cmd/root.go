@@ -8,13 +8,15 @@
 package cmd
 
 import (
+	"embed"
 	"log"
+	migration_cmd "xyz/cmd/migration"
 	"xyz/pkg/config"
 
 	"github.com/spf13/cobra"
 )
 
-var cfgFile string
+var cfg config.Config
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -26,7 +28,11 @@ var rootCmd = &cobra.Command{
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
+func Execute(migrationEmbed embed.FS) {
+	cfg.MigrationEmbed = migrationEmbed
+
+	rootCmd.AddCommand(migration_cmd.Init(cfg))
+
 	err := rootCmd.Execute()
 	if err != nil {
 		log.Fatal(err)

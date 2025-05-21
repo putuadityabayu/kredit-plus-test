@@ -7,8 +7,16 @@
 
 package main
 
-import "xyz/cmd"
+import (
+	"embed"
+	"xyz/cmd"
+)
+
+var (
+	//go:embed migrations/*
+	migrationEmbed embed.FS
+)
 
 func main() {
-	cmd.Execute()
+	cmd.Execute(migrationEmbed)
 }

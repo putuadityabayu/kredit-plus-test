@@ -17,9 +17,9 @@ func UserRouterV1(app *fiber.App, userRepo repository.UserRepository) {
 	router := app.Group("/v1")
 	h := handler.NewUserHandler(userRepo)
 
-	router.Get("/users")
+	//router.Get("/users")
 	router.Get("/user/:id", h.GetByID)
-	router.Post("/user")
-	router.Put("/user/:id")
-	router.Delete("/user/:id")
+	//router.Post("/user")
+	//router.Put("/user/:id")
+	//router.Delete("/user/:id")
 }

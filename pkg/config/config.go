@@ -9,7 +9,6 @@ package config
 
 import (
 	"embed"
-	"fmt"
 	"github.com/spf13/viper"
 	"github.com/subosito/gotenv"
 	"log"
@@ -38,6 +37,4 @@ func InitConfig() {
 	if err != nil {
 		log.Fatal("Failed to load config file")
 	}
-
-	fmt.Println("app_env", viper.AllSettings())
 }

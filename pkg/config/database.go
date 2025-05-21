@@ -29,11 +29,11 @@ func InitDatabase() *gorm.DB {
 	}
 
 	mysqlconfig := othermysql.Config{
-		User:                 os.Getenv("DB_USER"),
-		Passwd:               os.Getenv("DB_PASS"),
-		DBName:               os.Getenv("DB_NAME"),
+		User:                 viper.GetString("database.user"),
+		Passwd:               viper.GetString("database.password"),
+		DBName:               viper.GetString("database.database"),
 		Net:                  "tcp",
-		Addr:                 fmt.Sprintf("%s:%s", os.Getenv("DB_HOST"), os.Getenv("DB_PORT")),
+		Addr:                 fmt.Sprintf("%s:%d", viper.GetString("database.host"), viper.GetInt("database.port")),
 		ParseTime:            true,
 		Loc:                  time.UTC,
 		AllowNativePasswords: true,
@@ -59,7 +59,6 @@ func InitDatabase() *gorm.DB {
 			return carbon.Now().StdTime()
 		},
 	})
-
 	if err != nil {
 		log.Fatal("Failed to initialize mysql")
 	}

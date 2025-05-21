@@ -115,6 +115,7 @@ func New(ctx context.Context) *Rest {
 }
 
 func (r *Rest) Shutdown() {
+	otel.Shutdown()
 	if err := r.fiberApp.ShutdownWithTimeout(time.Second * 15); err != nil {
 		log.Error("Error when shutting down server")
 	}
