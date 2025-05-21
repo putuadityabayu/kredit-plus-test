@@ -101,6 +101,7 @@ func New(ctx context.Context) *Rest {
 
 	// ROUTER
 	router.UserRouterV1(app, userRepo)
+	router.AuthRouterV1(app, userRepo)
 
 	app.Use(func(c *fiber.Ctx) error {
 		return response.EndpointNotFound().Response(c)
@@ -116,7 +117,7 @@ func New(ctx context.Context) *Rest {
 
 func (r *Rest) Shutdown() {
 	otel.Shutdown()
-	if err := r.fiberApp.ShutdownWithTimeout(time.Second * 15); err != nil {
+	if err := r.fiberApp.ShutdownWithTimeout(time.Second * 5); err != nil {
 		log.Error("Error when shutting down server")
 	}
 	if r.db != nil {

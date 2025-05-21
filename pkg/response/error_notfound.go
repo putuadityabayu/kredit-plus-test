@@ -7,7 +7,11 @@
 
 package response
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"errors"
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+)
 
 const (
 	ErrNotFound = "NOT_FOUND"
@@ -20,4 +24,11 @@ func NotFound(message string, err ...error) ErrorResponse {
 
 func EndpointNotFound() ErrorResponse {
 	return NewError(fiber.StatusNotFound, ErrNotFound, "Invalid endpoint", nil, nil)
+}
+
+func NotfoundHelper(err error, message string) ErrorResponse {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return NotFound(message, err)
+	}
+	return ErrorServer("Internal server error", err)
 }

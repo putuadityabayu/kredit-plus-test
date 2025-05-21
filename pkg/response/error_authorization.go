@@ -8,8 +8,8 @@
 package response
 
 const (
-	ErrMissingAuthorization = "MISSING_AUTHORIZATION"
-	ErrJwt                  = "JWT_ERROR"
+	ErrUnauthorized = "UNAUTHORIZED"
+	ErrJwt          = "JWT_ERROR"
 
 	MsgMissingAuthorization = "Missing authorization token"
 	MsgExpiredToken         = "The token provided has expired"

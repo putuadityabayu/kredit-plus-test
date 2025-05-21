@@ -12,8 +12,11 @@ CREATE TABLE IF NOT EXISTS `users` (
 	selfie_photo_url VARCHAR(255),
 	password VARCHAR(255) NOT NULL,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	deleted_at TIMESTAMP NULL,
+
+	INDEX idx_users (deleted_at, created_at)
+);
 -- +goose StatementEnd
 
 -- +goose Down

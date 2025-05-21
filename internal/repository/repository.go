@@ -9,32 +9,15 @@ package repository
 
 import (
 	"context"
-	"gorm.io/gorm"
+	"xyz/internal/model"
 )
 
-type base struct {
-	db *gorm.DB
-}
+type UserRepository interface {
+	BaseRepository
 
-func (b *base) StartTransaction(ctx context.Context, fc func(ctx context.Context) error) error {
-	return b.db.Transaction(func(tx *gorm.DB) error {
-		// save transaction to context
-		ctx = context.WithValue(ctx, "db", tx)
-		errTx := fc(ctx)
-		if errTx != nil {
-			return errTx
-		}
-		return nil
-	})
-}
-
-func (b *base) getDatabase(ctx context.Context) *gorm.DB {
-	dbAny := ctx.Value("db")
-	if dbAny != nil {
-		dbGorm, ok := dbAny.(*gorm.DB)
-		if ok {
-			return dbGorm
-		}
-	}
-	return b.db
+	Create(ctx context.Context, user *model.User) error
+	GetByNIK(ctx context.Context, nik string) (*model.User, error)
+	GetByID(ctx context.Context, id string) (*model.User, error)
+	Save(ctx context.Context, user *model.User) error
+	Delete(ctx context.Context, id string) error
 }

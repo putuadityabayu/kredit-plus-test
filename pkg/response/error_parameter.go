@@ -8,6 +8,7 @@
 package response
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/go-playground/validator/v10"
@@ -20,26 +21,72 @@ const (
 	ErrInsufficientLimit = "INSUFFICIENT_LIMIT"
 )
 
-func ErrorParameter(code string, msg string, err error, status ...int) ErrorResponse {
+type ErrorFields []FieldError
+
+func (e ErrorFields) Error() string {
+	buff := bytes.NewBufferString("")
+
+	for i := 0; i < len(e); i++ {
+		buff.WriteString(fmt.Sprintf("%s: %s", e[i].Field, e[i].Message))
+		buff.WriteString("\n")
+	}
+
+	return strings.TrimSpace(buff.String())
+}
+
+func NewErrorFields(fields ...[2]string) ErrorFields {
+	errFields := make(ErrorFields, len(fields))
+	for i, field := range fields {
+		errFields[i] = FieldError{
+			Field:   field[0],
+			Message: field[1],
+		}
+	}
+	return errFields
+}
+
+// ErrorParameter
+//
+// options:
+// - int: http status code
+// - error error fields
+func ErrorParameter(code string, msg string, options ...any) ErrorResponse {
 	var (
 		httpStatus = fiber.StatusBadRequest
 		fields     []FieldError
+		errs       error
 	)
-	if len(status) > 0 {
-		httpStatus = status[0]
-	}
+	if len(options) > 0 {
+		for _, opt := range options {
+			switch o := opt.(type) {
+			case int:
+				httpStatus = o
+			case error:
 
-	var validateError validator.ValidationErrors
-	if errors.As(err, &validateError) {
-		for _, v := range validateError {
-			fields = append(fields, FieldError{
-				Field:   v.Field(),
-				Message: msgForTag(v),
-			})
+				fieldError := false
+				var validateError validator.ValidationErrors
+				if errors.As(o, &validateError) {
+					fieldError = true
+					for _, v := range validateError {
+						fields = append(fields, FieldError{
+							Field:   v.Field(),
+							Message: msgForTag(v),
+						})
+					}
+				}
+				var errorField ErrorFields
+				if errors.As(o, &errorField) {
+					fieldError = true
+					fields = append(fields, errorField...)
+				}
+				if !fieldError {
+					errs = errors.Join(errs, o)
+				}
+			}
 		}
 	}
 
-	return NewError(httpStatus, code, msg, fields, err)
+	return NewError(httpStatus, code, msg, fields, errs)
 }
 
 func msgForTag(fe validator.FieldError) string {

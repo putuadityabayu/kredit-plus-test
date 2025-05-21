@@ -10,15 +10,12 @@ package router
 import (
 	"github.com/gofiber/fiber/v2"
 	"xyz/internal/handler"
-	"xyz/internal/middleware"
 	"xyz/internal/repository"
 )
 
-func UserRouterV1(app *fiber.App, userRepo repository.UserRepository) {
+func AuthRouterV1(app *fiber.App, userRepo repository.UserRepository) {
 	routerV1 := app.Group("/v1")
-	h := handler.NewUserHandler(userRepo)
+	h := handler.NewAuthHandler(userRepo)
 
-	routerV1.Get("/user/:id", middleware.AuthorizationCheck, h.GetByID)
-	routerV1.Post("/user", h.Create)
-	routerV1.Put("/user", middleware.Authorization, h.Update)
+	routerV1.Post("/auth/login", h.Login)
 }

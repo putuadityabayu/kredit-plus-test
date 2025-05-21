@@ -8,9 +8,9 @@
 package model
 
 import (
+	"github.com/spf13/viper"
+	pncrypto "go.portalnesia.com/crypto"
 	"go.portalnesia.com/nullable"
-	"gorm.io/gorm"
-	"time"
 )
 
 type User struct {
@@ -19,8 +19,7 @@ type User struct {
 	FullName       string          `json:"full_name" gorm:"type:varchar(255)"`
 	LegalName      nullable.String `json:"legal_name" gorm:"column:legal_name;type:varchar(255)"`
 	BirthPlace     nullable.String `json:"birth_place"  gorm:"column:birth_place;type:varchar(255)"`
-	BirthDateDb    nullable.String `json:"-" gorm:"column:birth_date;type:date"`
-	BirthDate      nullable.Time   `json:"birth_date" gorm:"-"`
+	BirthDate      nullable.String `json:"birth_date" gorm:"column:birth_date;type:date"`
 	Salary         nullable.Float  `json:"salary" gorm:"column:salary;type:decimal"`
 	KTPPhotoURL    nullable.String `json:"ktp_photo_url" gorm:"column:ktp_photo_url;type:varchar(255)"`
 	SelfiePhotoURL nullable.String `json:"selfie_photo_url" gorm:"column:selfie_photo_url;type:varchar(255)"`
@@ -33,17 +32,13 @@ func (u *User) TableName() string {
 	return "users"
 }
 
-func (u *User) BeforeSave(_ *gorm.DB) error {
-	if u.BirthDate.Valid {
-		u.BirthDateDb = nullable.NewString(u.BirthDate.Data.Format("2006-01-02"))
-	}
-	return nil
+func (u *User) HashPassword(passwordString string) {
+	saltPassword := passwordString + viper.GetString("secret.password_salt")
+	hashPassword := pncrypto.HashPassword(saltPassword)
+	u.Password = hashPassword
 }
 
-func (u *User) AfterFind(_ *gorm.DB) error {
-	if u.BirthDateDb.Valid == false {
-		u.BirthDate = nullable.NewTime(time.Now())
-		u.BirthDate.Data, _ = time.Parse("2006-01-02", u.BirthDateDb.Data)
-	}
-	return nil
+func (u *User) CheckPassword(passwordString string) bool {
+	saltPassword := passwordString + viper.GetString("secret.password_salt")
+	return pncrypto.ComparePassword(saltPassword, u.Password)
 }

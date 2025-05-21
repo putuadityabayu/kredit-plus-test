@@ -10,16 +10,9 @@ package repository
 import (
 	"context"
 	"gorm.io/gorm"
+	"time"
 	"xyz/internal/model"
 )
-
-type UserRepository interface {
-	Create(ctx context.Context, user *model.User) error
-	GetByNIK(ctx context.Context, nik string) (*model.User, error)
-	GetByID(ctx context.Context, id string) (*model.User, error)
-	Update(ctx context.Context, user *model.User) error
-	Delete(ctx context.Context, id string) error
-}
 
 type UserRepositoryImpl struct {
 	base
@@ -53,7 +46,8 @@ func (r *UserRepositoryImpl) GetByID(ctx context.Context, id string) (*model.Use
 	return &user, nil
 }
 
-func (r *UserRepositoryImpl) Update(ctx context.Context, user *model.User) error {
+func (r *UserRepositoryImpl) Save(ctx context.Context, user *model.User) error {
+	user.UpdatedAt = time.Now()
 	return r.getDatabase(ctx).Save(user).Error
 }
 

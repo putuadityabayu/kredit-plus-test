@@ -20,8 +20,9 @@ type FieldError struct {
 }
 
 type Debug struct {
-	TraceID string `json:"trace_id"`
-	Err     error  `json:"error,omitempty"`
+	TraceID   string `json:"trace_id"`
+	Err       error  `json:"error,omitempty"`
+	ErrString string `json:"error_string,omitempty"`
 }
 type ErrorResponse struct {
 	Status  string       `json:"status"`
@@ -43,6 +44,8 @@ func (e ErrorResponse) Response(c *fiber.Ctx) error {
 	if appEnv := viper.GetString("app_env"); appEnv == "production" {
 		// remove golang err on production
 		e.Debug.Err = nil
+	} else if e.Debug.Err != nil {
+		e.Debug.ErrString = e.Debug.Err.Error()
 	}
 
 	return c.Status(e.HttpStatus).JSON(e)
