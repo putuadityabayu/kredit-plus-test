@@ -15,12 +15,12 @@ import (
 
 type User struct {
 	ID             string          `gorm:";column:id;primaryKey;type:uuid" json:"id"`
-	NIK            nullable.String `json:"nik" gorm:";column:nik;unique;type:varchar(16)"`
+	NIK            string          `json:"nik" gorm:";column:nik;unique;type:varchar(16)"`
 	FullName       string          `json:"full_name" gorm:"type:varchar(255)"`
-	LegalName      nullable.String `json:"legal_name" gorm:"column:legal_name;type:varchar(255)"`
-	BirthPlace     nullable.String `json:"birth_place"  gorm:"column:birth_place;type:varchar(255)"`
-	BirthDate      nullable.String `json:"birth_date" gorm:"column:birth_date;type:date"`
-	Salary         nullable.Float  `json:"salary" gorm:"column:salary;type:decimal"`
+	LegalName      string          `json:"legal_name" gorm:"column:legal_name;type:varchar(255)"`
+	BirthPlace     string          `json:"birth_place"  gorm:"column:birth_place;type:varchar(255)"`
+	BirthDate      string          `json:"birth_date" gorm:"column:birth_date;type:date"`
+	Salary         float64         `json:"salary" gorm:"column:salary;type:decimal"`
 	KTPPhotoURL    nullable.String `json:"ktp_photo_url" gorm:"column:ktp_photo_url;type:varchar(255)"`
 	SelfiePhotoURL nullable.String `json:"selfie_photo_url" gorm:"column:selfie_photo_url;type:varchar(255)"`
 	Date

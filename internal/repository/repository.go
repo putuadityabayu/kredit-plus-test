@@ -12,6 +12,10 @@ import (
 	"xyz/internal/model"
 )
 
+type BaseRepository interface {
+	StartTransaction(ctx context.Context, fc func(ctx context.Context) error) error
+}
+
 type UserRepository interface {
 	BaseRepository
 

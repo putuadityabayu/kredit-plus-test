@@ -52,8 +52,12 @@ func (e ErrorResponse) Response(c *fiber.Ctx) error {
 }
 
 func NewError(httpStatus int, code, message string, details []FieldError, err ...error) ErrorResponse {
-	stack := make([]uintptr, 5)
-	length := runtime.Callers(2, stack)
+	var stack []uintptr
+	if appEnv := viper.GetString("app_env"); appEnv != "test" {
+		stackTmp := make([]uintptr, 5)
+		length := runtime.Callers(2, stack)
+		stack = stackTmp[:length]
+	}
 
 	debug := Debug{}
 	if len(err) > 0 {
@@ -67,6 +71,6 @@ func NewError(httpStatus int, code, message string, details []FieldError, err ..
 		Details:    details,
 		Debug:      debug,
 		HttpStatus: httpStatus,
-		stack:      stack[:length],
+		stack:      stack,
 	}
 }

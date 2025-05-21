@@ -9,7 +9,6 @@ package service
 
 import (
 	"context"
-	"go.portalnesia.com/nullable"
 	"go.portalnesia.com/utils"
 	"time"
 	"xyz/internal/dto"
@@ -82,12 +81,12 @@ func (u UserServiceImpl) Create(ctx context.Context, req dto.UserRequest) (*mode
 
 	user := &model.User{
 		ID:         utils.UUID(),
-		NIK:        nullable.NewString(req.NIK),
+		NIK:        req.NIK,
 		FullName:   req.FullName,
-		LegalName:  nullable.NewString(req.LegalName),
-		BirthPlace: nullable.NewString(req.BirthPlace),
-		BirthDate:  nullable.NewString(req.BirthDate),
-		Salary:     nullable.NewFloat(req.Salary),
+		LegalName:  req.LegalName,
+		BirthPlace: req.BirthPlace,
+		BirthDate:  req.BirthDate,
+		Salary:     req.Salary,
 		Date:       model.NewDate(),
 	}
 	// hash password
@@ -145,10 +144,10 @@ func (u UserServiceImpl) Update(ctx context.Context, id string, req dto.UserRequ
 		}
 
 		user.FullName = req.FullName
-		user.LegalName = nullable.NewString(req.LegalName)
-		user.BirthPlace = nullable.NewString(req.BirthPlace)
-		user.BirthDate = nullable.NewString(req.BirthDate)
-		user.Salary = nullable.NewFloat(req.Salary)
+		user.LegalName = req.LegalName
+		user.BirthPlace = req.BirthPlace
+		user.BirthDate = req.BirthDate
+		user.Salary = req.Salary
 
 		// update user
 		errTx = u.userRepository.Save(ctx, user)

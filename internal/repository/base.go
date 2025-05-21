@@ -16,10 +16,6 @@ type base struct {
 	db *gorm.DB
 }
 
-type BaseRepository interface {
-	StartTransaction(ctx context.Context, fc func(ctx context.Context) error) error
-}
-
 func (b *base) StartTransaction(ctx context.Context, fc func(ctx context.Context) error) error {
 	return b.db.Transaction(func(tx *gorm.DB) error {
 		// save transaction to context
