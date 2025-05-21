@@ -14,6 +14,7 @@ import (
 	"xyz/internal/dto"
 	"xyz/internal/model"
 	"xyz/internal/repository"
+	"xyz/pkg/otel"
 	"xyz/pkg/response"
 	"xyz/pkg/validator"
 )
@@ -35,48 +36,46 @@ func NewUserService(userRepository repository.UserRepository) UserService {
 }
 
 func (u UserServiceImpl) Create(ctx context.Context, req dto.UserRequest) (*model.User, error) {
+	var span *otel.Span
+	ctx, span = otel.StartSpan(ctx, "UserService.Create")
+	defer span.End()
+
 	validate := validator.New()
 
 	// validate request with validator
 	if err := validate.Struct(req); err != nil {
+		span.RecordErrorHelper(err, "validator")
 		return nil, response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", err)
 	}
 
 	// next validation
-	errs := make([]any, 0)
+	errs := response.NewErrorFields()
 
 	// validate birthday
 	_, err := time.Parse("2006-01-02", req.BirthDate)
 	if err != nil {
-		errs = append(errs, response.NewErrorFields(
-			[2]string{"birth_date", "Invalid date format"},
-		))
+		errs.Add("birth_date", "Invalid date format")
 	}
 
 	// password required
 	if req.Password == "" {
-		errs = append(errs, response.NewErrorFields(
-			[2]string{"password", "Password is required"},
-		))
+		errs.Add("password", "Password is required")
 	}
 
 	// confirm password required
 	if req.ConfirmPassword == "" {
-		errs = append(errs, response.NewErrorFields(
-			[2]string{"confirm_password", "Confirm password is required"},
-		))
+		errs.Add("confirm_password", "Confirm password is required")
 	}
 
 	// password and confirm password must be the same
 	if req.Password != req.ConfirmPassword {
-		errs = append(errs, response.NewErrorFields(
-			[2]string{"password", "Password and confirm password must be the same"},
-		))
+		errs.Add("password", "Password and confirm password must be the same")
 	}
 
 	// return error if there is any
-	if len(errs) > 0 {
-		return nil, response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", errs...)
+	if errs.Exist() {
+		span.RecordErrorHelper(errs, "validation")
+		return nil, response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", errs)
 	}
 
 	user := &model.User{
@@ -94,6 +93,7 @@ func (u UserServiceImpl) Create(ctx context.Context, req dto.UserRequest) (*mode
 
 	err = u.userRepository.Create(ctx, user)
 	if err != nil {
+		span.RecordErrorHelper(errs, "Create data error")
 		return nil, err
 	}
 
@@ -101,36 +101,45 @@ func (u UserServiceImpl) Create(ctx context.Context, req dto.UserRequest) (*mode
 }
 
 func (u UserServiceImpl) GetByID(ctx context.Context, id string) (*model.User, error) {
+	var span *otel.Span
+	ctx, span = otel.StartSpan(ctx, "UserService.GetByID")
+	defer span.End()
+
 	user, err := u.userRepository.GetByID(ctx, id)
 	if err != nil {
-		return nil, response.NotfoundHelper(err, "user not found")
+		span.RecordErrorHelper(err, "repository.GetByID")
+		return nil, response.NotfoundHelper(err, "user not found", span)
 	}
 
 	return user, nil
 }
 
 func (u UserServiceImpl) Update(ctx context.Context, id string, req dto.UserRequest) (*model.User, error) {
+	var span *otel.Span
+	ctx, span = otel.StartSpan(ctx, "UserService.Update")
+	defer span.End()
+
 	validate := validator.New()
 
 	// validate request with validator
 	if err := validate.Struct(req); err != nil {
+		span.RecordErrorHelper(err, "validator")
 		return nil, response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", err)
 	}
 
 	// next validation
-	errs := make([]any, 0)
+	errs := response.NewErrorFields()
 
 	// validate birthday
 	_, err := time.Parse("2006-01-02", req.BirthDate)
 	if err != nil {
-		errs = append(errs, response.NewErrorFields(
-			[2]string{"birth_date", "Invalid date format"},
-		))
+		errs.Add("birth_date", "Invalid date format")
 	}
 
 	// return error if there is any
-	if len(errs) > 0 {
-		return nil, response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", errs...)
+	if errs.Exist() {
+		span.RecordErrorHelper(err, "validation")
+		return nil, response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", errs)
 	}
 
 	var user *model.User
@@ -158,6 +167,7 @@ func (u UserServiceImpl) Update(ctx context.Context, id string, req dto.UserRequ
 		return nil
 	})
 	if err != nil {
+		span.RecordErrorHelper(err, "db.transaction")
 		return nil, err
 	}
 

@@ -12,6 +12,7 @@ import (
 	"context"
 	"github.com/golang/mock/gomock"
 	"github.com/spf13/viper"
+	"log"
 	"os"
 	"testing"
 	mock_repository "xyz/mock/repository"
@@ -24,11 +25,14 @@ func setupTestConfig() {
   "secret": {
     "jwt": "61be065c6672292aeb685065264c6c23",
     "password_salt": "password_salt"
-  },
+  }
 }`
 
 	viper.SetConfigType("json")
-	_ = viper.ReadConfig(bytes.NewBuffer([]byte(configFile)))
+	err := viper.ReadConfig(bytes.NewBuffer([]byte(configFile)))
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	otel.InitTelemetry(context.Background(), "xyz-test")
 }
@@ -44,6 +48,8 @@ func TestMain(m *testing.M) {
 
 	// Run tests
 	code := m.Run()
+
+	teardownTestConfig()
 
 	os.Exit(code)
 }

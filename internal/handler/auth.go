@@ -12,6 +12,7 @@ import (
 	"xyz/internal/dto"
 	"xyz/internal/repository"
 	"xyz/internal/service"
+	"xyz/pkg/otel"
 	"xyz/pkg/response"
 )
 
@@ -28,12 +29,16 @@ func NewAuthHandler(userRepo repository.UserRepository) AuthHandler {
 
 func (h AuthHandler) Login(c *fiber.Ctx) error {
 	var req dto.LoginRequest
+	ctx, span := otel.StartSpan(c.UserContext(), "AuthHandler.Login")
+	defer span.End()
+	c.SetUserContext(ctx)
 
 	if err := c.BodyParser(&req); err != nil {
+		span.RecordErrorHelper(response.ErrorServer("", err), "body parser")
 		return response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", err)
 	}
 
-	user, err := h.authSvc.Login(c.UserContext(), req)
+	user, err := h.authSvc.Login(ctx, req)
 	if err != nil {
 		return err
 	}

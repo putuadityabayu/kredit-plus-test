@@ -9,11 +9,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"github.com/golang-jwt/jwt/v5"
 	"time"
 	"xyz/internal/dto"
 	"xyz/internal/repository"
 	"xyz/pkg/encrypt"
+	"xyz/pkg/otel"
 	"xyz/pkg/response"
 	"xyz/pkg/validator"
 )
@@ -33,22 +35,29 @@ func NewAuthService(userRepository repository.UserRepository) AuthService {
 }
 
 func (s AuthServiceImpl) Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
+	var span *otel.Span
+	ctx, span = otel.StartSpan(ctx, "AuthService.Login")
+	defer span.End()
+
 	validate := validator.New()
 
 	// validate request with validator
 	if err := validate.Struct(req); err != nil {
+		span.RecordErrorHelper(err, "validator")
 		return nil, response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", err)
 	}
 
 	// get user by nik
 	user, err := s.userRepository.GetByNIK(ctx, req.NIK)
 	if err != nil {
+		span.RecordErrorHelper(err, "repository.GetByNik")
 		return nil, response.NotfoundHelper(err, "Invalid nik or password")
 	}
 
 	// check user password
 	validPassword := user.CheckPassword(req.Password)
 	if !validPassword {
+		span.RecordErrorHelper(errors.New("invalid password"), "user.CheckPassword")
 		return nil, response.ErrorParameter(response.ErrBadRequest, "Invalid nik or password", nil)
 	}
 
@@ -58,6 +67,7 @@ func (s AuthServiceImpl) Login(ctx context.Context, req dto.LoginRequest) (*dto.
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
 	})
 	if err != nil {
+		span.RecordErrorHelper(err, "encrypt.GenerateJWTToken")
 		return nil, response.ErrorServer("Failed to generate token", err)
 	}
 

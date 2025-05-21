@@ -26,9 +26,16 @@ func EndpointNotFound() ErrorResponse {
 	return NewError(fiber.StatusNotFound, ErrNotFound, "Invalid endpoint", nil, nil)
 }
 
-func NotfoundHelper(err error, message string) ErrorResponse {
+type SpanInterface interface {
+	RecordErrorHelper(err error, message string)
+}
+
+func NotfoundHelper(err error, message string, span ...SpanInterface) ErrorResponse {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return NotFound(message, err)
+	}
+	if len(span) > 0 {
+		span[0].RecordErrorHelper(err, "NotfoundHelper")
 	}
 	return ErrorServer("Internal server error", err)
 }

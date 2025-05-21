@@ -44,7 +44,7 @@ func New(ctx context.Context) *Rest {
 	app := fiber.New(fiber.Config{
 		AppName: "XYZ API",
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			_, span := otel.StartSpan(c.UserContext(), "ErrorHandler")
+			span := otel.FromContext(c.UserContext())
 			defer span.End()
 
 			var e response.ErrorResponse
@@ -61,9 +61,7 @@ func New(ctx context.Context) *Rest {
 	app.Use(recover2.New(recover2.Config{
 		EnableStackTrace: true,
 		StackTraceHandler: func(c *fiber.Ctx, e interface{}) {
-			var span *otel.Span
-			ctx := c.UserContext()
-			ctx, span = otel.StartSpan(ctx, "StackTraceHandler")
+			span := otel.FromContext(c.UserContext())
 			defer span.End()
 
 			if err, ok := e.(error); ok {

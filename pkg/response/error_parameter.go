@@ -23,18 +23,38 @@ const (
 
 type ErrorFields []FieldError
 
-func (e ErrorFields) Error() string {
-	buff := bytes.NewBufferString("")
+func (e *ErrorFields) Error() string {
+	if e == nil {
+		return "empty error"
+	}
 
-	for i := 0; i < len(e); i++ {
-		buff.WriteString(fmt.Sprintf("%s: %s", e[i].Field, e[i].Message))
+	buff := bytes.NewBufferString("")
+	v := *e
+	for i := 0; i < len(v); i++ {
+		buff.WriteString(fmt.Sprintf("%s: %s", v[i].Field, v[i].Message))
 		buff.WriteString("\n")
 	}
 
 	return strings.TrimSpace(buff.String())
 }
 
-func NewErrorFields(fields ...[2]string) ErrorFields {
+func (e *ErrorFields) Add(field string, message string) {
+	if e != nil {
+		*e = append(*e, FieldError{
+			Field:   field,
+			Message: message,
+		})
+	}
+}
+
+func (e *ErrorFields) Exist() bool {
+	if e == nil {
+		return false
+	}
+	return len(*e) > 0
+}
+
+func NewErrorFields(fields ...[2]string) *ErrorFields {
 	errFields := make(ErrorFields, len(fields))
 	for i, field := range fields {
 		errFields[i] = FieldError{
@@ -42,7 +62,7 @@ func NewErrorFields(fields ...[2]string) ErrorFields {
 			Message: field[1],
 		}
 	}
-	return errFields
+	return &errFields
 }
 
 // ErrorParameter
@@ -74,10 +94,10 @@ func ErrorParameter(code string, msg string, options ...any) ErrorResponse {
 						})
 					}
 				}
-				var errorField ErrorFields
+				var errorField *ErrorFields
 				if errors.As(o, &errorField) {
 					fieldError = true
-					fields = append(fields, errorField...)
+					fields = append(fields, *errorField...)
 				}
 				if !fieldError {
 					errs = errors.Join(errs, o)

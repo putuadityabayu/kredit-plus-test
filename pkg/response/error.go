@@ -55,7 +55,7 @@ func NewError(httpStatus int, code, message string, details []FieldError, err ..
 	var stack []uintptr
 	if appEnv := viper.GetString("app_env"); appEnv != "test" {
 		stackTmp := make([]uintptr, 5)
-		length := runtime.Callers(2, stack)
+		length := runtime.Callers(2, stackTmp)
 		stack = stackTmp[:length]
 	}
 

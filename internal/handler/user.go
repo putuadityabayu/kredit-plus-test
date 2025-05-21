@@ -8,11 +8,13 @@
 package handler
 
 import (
+	"errors"
 	"github.com/gofiber/fiber/v2"
 	"xyz/internal/dto"
 	"xyz/internal/repository"
 	"xyz/internal/service"
 	"xyz/pkg/helper"
+	"xyz/pkg/otel"
 	"xyz/pkg/response"
 )
 
@@ -28,13 +30,18 @@ func NewUserHandler(userRepo repository.UserRepository) UserHandler {
 }
 
 func (h UserHandler) Create(c *fiber.Ctx) error {
+	ctx, span := otel.StartSpan(c.UserContext(), "UserHandler.Create")
+	defer span.End()
+	c.SetUserContext(ctx)
+
 	var req dto.UserRequest
 
 	if err := c.BodyParser(&req); err != nil {
+		span.RecordErrorHelper(response.ErrorServer("", err), "body parser")
 		return response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", err)
 	}
 
-	user, err := h.userSvc.Create(c.UserContext(), req)
+	user, err := h.userSvc.Create(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -54,15 +61,21 @@ func (h UserHandler) GetByID(c *fiber.Ctx) error {
 }
 
 func (h UserHandler) Update(c *fiber.Ctx) error {
+	ctx, span := otel.StartSpan(c.UserContext(), "UserHandler.Create")
+	defer span.End()
+	c.SetUserContext(ctx)
+
 	userid := helper.GetValueContext(c.UserContext(), "userid", "")
 
 	if userid == "" {
+		span.RecordErrorHelper(response.ErrorServer("", errors.New("missing userid")), "userid == \"\"")
 		return response.Authorization(fiber.StatusForbidden, "FORBIDDEN", "You don't have permission to access this resource")
 	}
 
 	var req dto.UserRequest
 
 	if err := c.BodyParser(&req); err != nil {
+		span.RecordErrorHelper(response.ErrorServer("", err), "body parser")
 		return response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", err)
 	}
 

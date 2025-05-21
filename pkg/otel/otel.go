@@ -10,7 +10,6 @@ package otel
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/otel/codes"
@@ -37,7 +36,6 @@ var (
 // InitTelemetry initializes OpenTelemetry with trace and metric exporters
 func InitTelemetry(ctx context.Context, serviceName string) {
 	if env := viper.GetString("app_env"); env == "test" {
-		fmt.Println("TEST")
 		setupTest(serviceName)
 		return
 	}
@@ -165,12 +163,12 @@ type ErrorWithStack interface {
 
 // RecordErrorHelper helper for record error
 func (s *Span) RecordErrorHelper(err error, message string) {
+	s.SetStatus(codes.Error, message)
 	var e response.ErrorResponse
 	if !errors.As(err, &e) {
 		e = response.NewError(0, "", "", nil, err)
 	}
 	s.RecordError(err, trace.WithAttributes(ToKeyValue(map[string]any{"exception.stacktrace": e.ErrorStack()})...))
-	s.SetStatus(codes.Error, message)
 }
 
 // GetTraceID to get trace id and span id
