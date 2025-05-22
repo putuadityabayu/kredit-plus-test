@@ -187,14 +187,6 @@ func TestAuth_Login(t *testing.T) {
 			} else {
 				assert.True(t, err != nil)
 				assert.Equal(t, errExpected, err)
-				/*var e response.ErrorResponse
-				if errors.As(err, &e) {
-					assert.Equal(t, e.Code, errExpected.Code)
-
-					assert.Equal(t, errExpected.Details, e.Details)
-				} else {
-					assert.ErrorContains(t, err, errExpected.Error())
-				}*/
 			}
 
 			if resExpected != nil {

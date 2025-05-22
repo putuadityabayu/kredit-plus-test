@@ -12,6 +12,10 @@ import (
 	"gorm.io/gorm"
 )
 
+type BaseRepository interface {
+	StartTransaction(ctx context.Context, fc func(ctx context.Context) error) error
+}
+
 type base struct {
 	db *gorm.DB
 }

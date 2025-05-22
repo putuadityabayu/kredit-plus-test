@@ -1,6 +1,7 @@
 mock:
 	@echo "mock repositories"
-	@mockgen --source=./internal/repository/repository.go -destination=./mock/repository/repository.go --package=mock_repository
+	@mkdir -p mocks/repository
+	@mockgen xyz/internal/repository UserRepository > mocks/repository/user_repository.go
 
 test:
 	@mkdir -p coverage

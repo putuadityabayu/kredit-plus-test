@@ -93,8 +93,8 @@ func (u UserServiceImpl) Create(ctx context.Context, req dto.UserRequest) (*mode
 
 	err = u.userRepository.Create(ctx, user)
 	if err != nil {
-		span.RecordErrorHelper(errs, "Create data error")
-		return nil, err
+		span.RecordErrorHelper(err, "Create data error")
+		return nil, response.ErrorServer("Internal server error", err)
 	}
 
 	return user, nil
@@ -149,7 +149,7 @@ func (u UserServiceImpl) Update(ctx context.Context, id string, req dto.UserRequ
 		// get user by id
 		user, errTx = u.userRepository.GetByID(ctx, id)
 		if errTx != nil {
-			return errTx
+			return response.NotfoundHelper(errTx, "user not found", span)
 		}
 
 		user.FullName = req.FullName
@@ -161,7 +161,7 @@ func (u UserServiceImpl) Update(ctx context.Context, id string, req dto.UserRequ
 		// update user
 		errTx = u.userRepository.Save(ctx, user)
 		if errTx != nil {
-			return errTx
+			return response.ErrorServer("Internal server error", errTx)
 		}
 
 		return nil

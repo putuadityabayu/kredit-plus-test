@@ -15,7 +15,7 @@ import (
 	"log"
 	"os"
 	"testing"
-	mock_repository "xyz/mock/repository"
+	mock_repository "xyz/mocks/repository"
 	"xyz/pkg/otel"
 )
 

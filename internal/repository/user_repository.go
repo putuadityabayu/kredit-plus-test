@@ -14,6 +14,15 @@ import (
 	"xyz/internal/model"
 )
 
+type UserRepository interface {
+	BaseRepository
+
+	Create(ctx context.Context, user *model.User) error
+	GetByNIK(ctx context.Context, nik string) (*model.User, error)
+	GetByID(ctx context.Context, id string) (*model.User, error)
+	Save(ctx context.Context, user *model.User) error
+	Delete(ctx context.Context, id string) error
+}
 type UserRepositoryImpl struct {
 	base
 }
