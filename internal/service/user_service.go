@@ -125,7 +125,7 @@ func (u userServiceImpl) Update(ctx context.Context, req dto.UserRequest) (*mode
 
 	userid := helper.GetValueContext(ctx, "userid", "")
 	if userid == "" {
-		return nil, response.Authorization(fiber.StatusForbidden, response.ErrForbidden, response.MsgForbidden)
+		return nil, response.Authorization(fiber.StatusUnauthorized, response.ErrUnauthorized, response.MsgLoginRequired)
 	}
 
 	validate := validator.New()
@@ -190,7 +190,7 @@ func (u userServiceImpl) GetTenorLimits(ctx context.Context) ([]*model.TenorLimi
 
 	userid := helper.GetValueContext(ctx, "userid", "")
 	if userid == "" {
-		return nil, response.Authorization(fiber.StatusForbidden, response.ErrForbidden, response.MsgForbidden)
+		return nil, response.Authorization(fiber.StatusUnauthorized, response.ErrUnauthorized, response.MsgLoginRequired)
 	}
 
 	tenorLimits, err := u.userRepository.ListTenorLimits(ctx, userid)
@@ -209,7 +209,7 @@ func (u userServiceImpl) GetTransactions(ctx context.Context, req dto.Pagination
 
 	userid := helper.GetValueContext(ctx, "userid", "")
 	if userid == "" {
-		return nil, nil, response.Authorization(fiber.StatusForbidden, response.ErrForbidden, response.MsgForbidden)
+		return nil, nil, response.Authorization(fiber.StatusUnauthorized, response.ErrUnauthorized, response.MsgLoginRequired)
 	}
 
 	total, transactions, err := u.userRepository.ListTransactions(ctx, userid, repository.WithPagination(req))

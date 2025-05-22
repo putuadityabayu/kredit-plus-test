@@ -268,7 +268,7 @@ func TestUserService_Update(t *testing.T) {
 			name: "Not login",
 			setup: func() (req dto.UserRequest, res *model.User, err error) {
 				req = dto.UserRequest{}
-				err = response.Authorization(fiber.StatusForbidden, "FORBIDDEN", "You don't have permission to access this resource")
+				err = response.Authorization(fiber.StatusUnauthorized, response.ErrUnauthorized, response.MsgLoginRequired)
 				return
 			},
 			notLogin: true,
@@ -407,7 +407,7 @@ func TestUserService_GetTenorLimits(t *testing.T) {
 		{
 			name: "User not logged in",
 			setup: func() (res []*model.TenorLimits, err error) {
-				err = response.Authorization(fiber.StatusForbidden, "FORBIDDEN", "You don't have permission to access this resource")
+				err = response.Authorization(fiber.StatusUnauthorized, response.ErrUnauthorized, response.MsgLoginRequired)
 				return
 			},
 			notLogin: true,
@@ -479,7 +479,7 @@ func TestUserService_GetTransactions(t *testing.T) {
 		{
 			name: "User not logged in",
 			setup: func() (res []*model.Transaction, meta *response.Meta, err error) {
-				err = response.Authorization(fiber.StatusForbidden, "FORBIDDEN", "You don't have permission to access this resource")
+				err = response.Authorization(fiber.StatusUnauthorized, response.ErrUnauthorized, response.MsgLoginRequired)
 				return
 			},
 			notLogin: true,

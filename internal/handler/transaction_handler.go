@@ -39,7 +39,7 @@ func (h TransactionHandler) Create(c *fiber.Ctx) error {
 		return response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", err)
 	}
 
-	user, err := h.transactionSvc.Create(ctx, req)
+	user, _, err := h.transactionSvc.Create(ctx, req)
 	if err != nil {
 		return err
 	}

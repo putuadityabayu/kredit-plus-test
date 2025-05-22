@@ -71,7 +71,7 @@ func DatabaseHelper(err error, mapIndexKey map[string]string, span ...SpanInterf
 	}
 
 	if len(span) > 0 {
-		span[0].RecordErrorHelper(err, "NotfoundHelper")
+		span[0].RecordErrorHelper(err, "DatabaseHelper")
 	}
 	return ErrorServer(MsgInternalServer, err)
 }

@@ -10,9 +10,9 @@ package response
 import "github.com/gofiber/fiber/v2"
 
 const (
-	MsgInternalServer = "Internal server error"
+	MsgInternalServer = "An unexpected error occurred on the server. Please try again later."
 )
 
 func ErrorServer(msg string, err error) ErrorResponse {
-	return NewError(fiber.StatusInternalServerError, "SERVER_ERROR", msg, nil, err)
+	return NewError(fiber.StatusInternalServerError, "INTERNAL_SERVER_ERROR", msg, nil, err)
 }

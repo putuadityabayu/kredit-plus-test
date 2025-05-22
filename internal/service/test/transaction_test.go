@@ -60,7 +60,7 @@ func TestTransactionService_Create(t *testing.T) {
 		{
 			name: "User not logged in",
 			setup: func() (req dto.TransactionRequest, res *model.Transaction, err error) {
-				err = response.Authorization(fiber.StatusForbidden, "FORBIDDEN", "You don't have permission to access this resource")
+				err = response.Authorization(fiber.StatusUnauthorized, response.ErrUnauthorized, response.MsgLoginRequired)
 				return
 			},
 			notLogin: true,
@@ -114,7 +114,7 @@ func TestTransactionService_Create(t *testing.T) {
 
 				mock.userRepo.EXPECT().GetByID(gomock.Any(), userId).Return(user, nil)
 
-				err = response.ErrorParameter(response.ErrUnprocessable, "Credit limit exceeded", fiber.StatusUnprocessableEntity)
+				err = response.ErrorParameter(response.ErrInsufficientLimit, response.MsgInsufficientLimit, fiber.StatusUnprocessableEntity)
 				mock.transactionRepo.EXPECT().GetLimit(gomock.Any(), userId, req.Tenor, gomock.Any()).Return(nil, gorm.ErrRecordNotFound)
 				return
 			},
@@ -132,7 +132,7 @@ func TestTransactionService_Create(t *testing.T) {
 
 				mock.userRepo.EXPECT().GetByID(gomock.Any(), userId).Return(user, nil)
 				mock.transactionRepo.EXPECT().GetLimit(gomock.Any(), userId, req.Tenor, gomock.Any()).Return(&limit, nil)
-				err = response.ErrorParameter(response.ErrUnprocessable, "Credit limit exceeded", fiber.StatusUnprocessableEntity)
+				err = response.ErrorParameter(response.ErrInsufficientLimit, response.MsgInsufficientLimit, fiber.StatusUnprocessableEntity)
 				return
 			},
 		},

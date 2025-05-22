@@ -9,11 +9,10 @@ package response
 
 const (
 	ErrUnauthorized = "UNAUTHORIZED"
-	ErrForbidden    = "FORBIDDEN"
 
 	MsgMissingAuthorization = "Missing authorization token"
 	MsgInvalidToken         = "The token provided is invalid"
-	MsgForbidden            = "You don't have permission to access this resource"
+	MsgLoginRequired        = "Authentication required. Please provide a valid token"
 )
 
 func Authorization(httpCode int, code string, msg string, err ...error) ErrorResponse {

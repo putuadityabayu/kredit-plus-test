@@ -12,6 +12,10 @@ services:
     ports:
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
+    networks:
+      - app-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   # Jaeger
   jaeger:
@@ -24,6 +28,8 @@ services:
       - "14250:14250"   # Jaeger model.proto
       - "14268:14268"   # Jaeger HTTP thrift spans
       - "14269:14269"   # Admin port
+    networks:
+      - app-network
 
   redis:
     container_name: redis-xyz
@@ -32,3 +38,8 @@ services:
       - 6379:6379
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+
+networks:
+  app-network:
+    driver: bridge

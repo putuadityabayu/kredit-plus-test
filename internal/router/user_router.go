@@ -18,7 +18,7 @@ func UserRouterV1(app *fiber.App, repo repository.RepoRegistry) {
 	routerV1 := app.Group("/v1")
 	h := handler.NewUserHandler(repo)
 
-	routerV1.Get("/user/tenor", middleware.Authorization, h.ListNIK)
+	routerV1.Get("/user/tenor-limits", middleware.Authorization, h.ListNIK)
 	routerV1.Get("/user/transactions", middleware.Authorization, h.ListTransactions)
 	routerV1.Get("/user/detail/:id", middleware.AuthorizationCheck, h.GetByID)
 	routerV1.Post("/user", h.Create)

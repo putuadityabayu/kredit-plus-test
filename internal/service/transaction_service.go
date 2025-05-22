@@ -46,7 +46,7 @@ func (t transactionServiceImpl) Create(ctx context.Context, req dto.TransactionR
 
 	userid := helper.GetValueContext(ctx, "userid", "")
 	if userid == "" {
-		return nil, nil, response.Authorization(fiber.StatusForbidden, response.ErrForbidden, response.MsgForbidden)
+		return nil, nil, response.Authorization(fiber.StatusUnauthorized, response.ErrUnauthorized, response.MsgLoginRequired)
 	}
 
 	validate := validator.New()
@@ -90,14 +90,14 @@ func (t transactionServiceImpl) Create(ctx context.Context, req dto.TransactionR
 		limit, err = t.transactionRepository.GetLimit(ctx, user.ID, req.Tenor, repository.WithLockTable("user_tenor_limits"))
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return response.ErrorParameter(response.ErrUnprocessable, "Credit limit exceeded", fiber.StatusUnprocessableEntity)
+				return response.ErrorParameter(response.ErrInsufficientLimit, response.MsgInsufficientLimit, fiber.StatusUnprocessableEntity)
 			}
 			return response.ErrorServer(response.MsgInternalServer, err)
 		}
 
 		// check limit
 		if limit.LimitAmount < totalAmount {
-			return response.ErrorParameter(response.ErrUnprocessable, "Credit limit exceeded", fiber.StatusUnprocessableEntity)
+			return response.ErrorParameter(response.ErrInsufficientLimit, response.MsgInsufficientLimit, fiber.StatusUnprocessableEntity)
 		}
 		limit.LimitAmount -= totalAmount
 

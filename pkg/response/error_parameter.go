@@ -17,9 +17,10 @@ import (
 )
 
 const (
-	ErrBadRequest     = "BAD_REQUEST"
-	MsgInvalidRequest = "Invalid request parameter"
-	ErrUnprocessable  = "UNPROCESSABLE_ENTITY"
+	ErrBadRequest        = "BAD_REQUEST"
+	MsgInvalidRequest    = "Invalid request parameter"
+	ErrInsufficientLimit = "INSUFFICIENT_LIMIT"
+	MsgInsufficientLimit = "Insufficient credit limit for this transaction."
 )
 
 type ErrorFields []FieldError

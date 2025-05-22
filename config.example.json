@@ -1,0 +1,23 @@
+{
+  "app_env": "",
+  "port": 4000,
+  "secret": {
+    "jwt": "",
+    "password_salt": ""
+  },
+  "database": {
+    "host": "",
+    "port": 3306,
+    "user": "",
+    "password": "",
+    "database": ""
+  },
+  "redis": {
+    "host": "",
+    "port": 6379,
+    "user": "",
+    "password": "",
+    "database": 0
+  },
+  "otel_url": ""
+}
