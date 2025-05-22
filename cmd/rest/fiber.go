@@ -51,7 +51,7 @@ func New(ctx context.Context) *Rest {
 			if errors.As(err, &e) {
 				e.Debug.TraceID = span.GetTraceID()
 			} else {
-				e = response.ErrorServer("Internal Server Error", err)
+				e = response.ErrorServer(response.MsgInternalServer, err)
 				e.Debug.TraceID = span.GetTraceID()
 			}
 			return e.Response(c)
@@ -96,16 +96,17 @@ func New(ctx context.Context) *Rest {
 	otel.InitTelemetry(ctx, "xyz-api")
 	db := config.InitDatabase()
 	userRepo := repository.NewUserRepository(db)
-	limitRepo := repository.NewTenorLimitsRepository(db)
+	transactionRepo := repository.NewTransactionRepository(db)
 
 	repoRegistry := repository.RepoRegistry{
-		UserRepository:  userRepo,
-		LimitRepository: limitRepo,
+		UserRepository:        userRepo,
+		TransactionRepository: transactionRepo,
 	}
 
 	// ROUTER
 	router.UserRouterV1(app, repoRegistry)
 	router.AuthRouterV1(app, repoRegistry)
+	router.TransactionRouterV1(app, repoRegistry)
 
 	app.Use(func(c *fiber.Ctx) error {
 		return response.EndpointNotFound().Response(c)

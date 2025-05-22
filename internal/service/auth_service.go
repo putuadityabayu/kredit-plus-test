@@ -24,17 +24,17 @@ type AuthService interface {
 	Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error)
 }
 
-type AuthServiceImpl struct {
+type authServiceImpl struct {
 	userRepository repository.UserRepository
 }
 
 func NewAuthService(userRepository repository.UserRepository) AuthService {
-	return AuthServiceImpl{
+	return authServiceImpl{
 		userRepository: userRepository,
 	}
 }
 
-func (s AuthServiceImpl) Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
+func (s authServiceImpl) Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
 	var span *otel.Span
 	ctx, span = otel.StartSpan(ctx, "AuthService.Login")
 	defer span.End()

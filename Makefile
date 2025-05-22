@@ -2,7 +2,7 @@ mock:
 	@echo "mock repositories"
 	@mkdir -p mocks/repository
 	@mockgen xyz/internal/repository UserRepository > mocks/repository/user_repository.go
-	@mockgen xyz/internal/repository TenorLimitsRepository > mocks/repository/tenor_limits_repository.go
+	@mockgen xyz/internal/repository TransactionRepository > mocks/repository/transaction_repository.go
 
 test:
 	@mkdir -p coverage

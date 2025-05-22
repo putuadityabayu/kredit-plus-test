@@ -24,7 +24,7 @@ import (
 	"xyz/pkg/validator"
 )
 
-func TestAuth_Login(t *testing.T) {
+func TestAuthService_Login(t *testing.T) {
 	mock := setupApp(t)
 	svc := service.NewAuthService(mock.userRepo)
 	defer mock.ctrl.Finish()
@@ -100,7 +100,7 @@ func TestAuth_Login(t *testing.T) {
 
 				err = errors.New("server error")
 				mock.userRepo.EXPECT().GetByNIK(gomock.Any(), req.NIK).Return(nil, err).Times(1)
-				err = response.ErrorServer("Internal server error", err)
+				err = response.ErrorServer(response.MsgInternalServer, err)
 
 				return
 			},

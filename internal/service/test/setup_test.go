@@ -57,8 +57,8 @@ func TestMain(m *testing.M) {
 type setupResponse struct {
 	ctrl *gomock.Controller
 
-	userRepo  *mock_repository.MockUserRepository
-	limitRepo *mock_repository.MockTenorLimitsRepository
+	userRepo        *mock_repository.MockUserRepository
+	transactionRepo *mock_repository.MockTransactionRepository
 }
 
 func setupApp(t *testing.T) *setupResponse {
@@ -66,17 +66,22 @@ func setupApp(t *testing.T) *setupResponse {
 	defer ctrl.Finish()
 
 	userRepo := mock_repository.NewMockUserRepository(ctrl)
-	limitRepo := mock_repository.NewMockTenorLimitsRepository(ctrl)
+	transactionRepo := mock_repository.NewMockTransactionRepository(ctrl)
 
 	userRepo.EXPECT().StartTransaction(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, fn func(ctx context.Context) error) error {
 		// Jalankan fungsi yang di-pass
 		err := fn(ctx)
 		return err
 	}).AnyTimes()
+	transactionRepo.EXPECT().StartTransaction(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, fn func(ctx context.Context) error) error {
+		// Jalankan fungsi yang di-pass
+		err := fn(ctx)
+		return err
+	}).AnyTimes()
 
 	return &setupResponse{
-		ctrl:      ctrl,
-		userRepo:  userRepo,
-		limitRepo: limitRepo,
+		ctrl:            ctrl,
+		userRepo:        userRepo,
+		transactionRepo: transactionRepo,
 	}
 }

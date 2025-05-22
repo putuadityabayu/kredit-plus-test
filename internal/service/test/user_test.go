@@ -11,11 +11,13 @@ import (
 	"bou.ke/monkey"
 	"context"
 	"errors"
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"go.portalnesia.com/utils"
 	"gorm.io/gorm"
 	"testing"
+	"time"
 	"xyz/internal/dto"
 	"xyz/internal/model"
 	"xyz/internal/service"
@@ -25,7 +27,7 @@ import (
 
 func TestUser_Create(t *testing.T) {
 	mock := setupApp(t)
-	svc := service.NewUserService(mock.userRepo, mock.limitRepo)
+	svc := service.NewUserService(mock.userRepo)
 	defer mock.ctrl.Finish()
 
 	validate := validator.New()
@@ -46,7 +48,7 @@ func TestUser_Create(t *testing.T) {
 		setup func() (req dto.UserRequest, res *model.User, err error)
 	}{
 		{
-			name: "Missing required fields",
+			name: "Invalid requests",
 			setup: func() (req dto.UserRequest, res *model.User, err error) {
 				req = dto.UserRequest{}
 				err = validate.Struct(&req)
@@ -131,7 +133,7 @@ func TestUser_Create(t *testing.T) {
 			setup: func() (req dto.UserRequest, res *model.User, err error) {
 				req = tmpReq
 				errs := errors.New("repository error")
-				err = response.ErrorServer("Internal server error", errs)
+				err = response.ErrorServer(response.MsgInternalServer, errs)
 				mock.userRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(errs).Times(1)
 				return
 			},
@@ -169,7 +171,7 @@ func TestUser_Create(t *testing.T) {
 
 func TestUser_GetByID(t *testing.T) {
 	mock := setupApp(t)
-	svc := service.NewUserService(mock.userRepo, mock.limitRepo)
+	svc := service.NewUserService(mock.userRepo)
 	defer mock.ctrl.Finish()
 
 	cases := []struct {
@@ -243,7 +245,7 @@ func TestUser_GetByID(t *testing.T) {
 
 func TestUserService_Update(t *testing.T) {
 	mock := setupApp(t)
-	svc := service.NewUserService(mock.userRepo, mock.limitRepo)
+	svc := service.NewUserService(mock.userRepo)
 	defer mock.ctrl.Finish()
 
 	validate := validator.New()
@@ -258,11 +260,21 @@ func TestUserService_Update(t *testing.T) {
 	}
 
 	cases := []struct {
-		name  string
-		setup func() (req dto.UserRequest, res *model.User, err error)
+		name     string
+		setup    func() (req dto.UserRequest, res *model.User, err error)
+		notLogin bool
 	}{
 		{
-			name: "Missing required fields",
+			name: "Not login",
+			setup: func() (req dto.UserRequest, res *model.User, err error) {
+				req = dto.UserRequest{}
+				err = response.Authorization(fiber.StatusForbidden, "FORBIDDEN", "You don't have permission to access this resource")
+				return
+			},
+			notLogin: true,
+		},
+		{
+			name: "Invalid requests",
 			setup: func() (req dto.UserRequest, res *model.User, err error) {
 				req = dto.UserRequest{}
 				err = validate.Struct(&req)
@@ -304,7 +316,7 @@ func TestUserService_Update(t *testing.T) {
 				mock.userRepo.EXPECT().GetByID(gomock.Any(), id).Return(resp, nil)
 				errs := errors.New("repository error")
 				mock.userRepo.EXPECT().Save(gomock.Any(), gomock.Any()).Return(errs).Times(1)
-				err = response.ErrorServer("Internal server error", errs)
+				err = response.ErrorServer(response.MsgInternalServer, errs)
 				return
 			},
 		},
@@ -330,8 +342,14 @@ func TestUserService_Update(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			if !tc.notLogin {
+				ctx = context.WithValue(ctx, "userid", id)
+			}
+
 			req, resExpected, expectedErr := tc.setup()
-			res, err := svc.Update(context.Background(), id, req)
+			res, err := svc.Update(ctx, req)
 
 			if expectedErr == nil {
 				assert.NoError(t, err)
@@ -351,6 +369,160 @@ func TestUserService_Update(t *testing.T) {
 				resExpected.Date = date
 
 				assert.Equal(t, resExpected, res)
+			}
+		})
+	}
+}
+
+func TestUserService_GetTenorLimits(t *testing.T) {
+	mock := setupApp(t)
+	svc := service.NewUserService(mock.userRepo)
+	defer mock.ctrl.Finish()
+
+	userId := "user-id"
+	date := time.Now().Add(-24 * time.Hour)
+
+	cases := []struct {
+		name     string
+		setup    func() (res []*model.TenorLimits, err error)
+		notLogin bool
+	}{
+		{
+			name: "Successful retrieval",
+			setup: func() (res []*model.TenorLimits, err error) {
+				tenorLimits := []*model.TenorLimits{
+					{
+						ID: "1", TenorInMonths: 3, LimitAmount: 1000000, CreatedAt: date, UpdatedAt: date,
+						UserID: userId,
+					},
+					{
+						ID: "2", TenorInMonths: 6, LimitAmount: 2000000, CreatedAt: date, UpdatedAt: date,
+						UserID: userId,
+					},
+				}
+				mock.userRepo.EXPECT().ListTenorLimits(gomock.Any(), userId).Return(tenorLimits, nil)
+				return
+			},
+		},
+		{
+			name: "User not logged in",
+			setup: func() (res []*model.TenorLimits, err error) {
+				err = response.Authorization(fiber.StatusForbidden, "FORBIDDEN", "You don't have permission to access this resource")
+				return
+			},
+			notLogin: true,
+		},
+		{
+			name: "Repository error",
+			setup: func() (res []*model.TenorLimits, err error) {
+				errs := errors.New("repository error")
+				err = response.ErrorServer(response.MsgInternalServer, errs)
+				mock.userRepo.EXPECT().ListTenorLimits(gomock.Any(), userId).Return(nil, errs)
+				return
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			if !tc.notLogin {
+				ctx = context.WithValue(ctx, "userid", userId)
+			}
+
+			expectedRes, expectedErr := tc.setup()
+			res, err := svc.GetTenorLimits(ctx)
+
+			if expectedErr == nil {
+				assert.NoError(t, err)
+			} else {
+				assert.True(t, err != nil)
+				assert.Equal(t, expectedErr, err)
+			}
+
+			if expectedRes != nil {
+				assert.NotNil(t, res)
+
+				assert.Equal(t, expectedRes, res)
+			}
+		})
+	}
+}
+
+func TestUserService_GetTransactions(t *testing.T) {
+	mock := setupApp(t)
+	svc := service.NewUserService(mock.userRepo)
+	defer mock.ctrl.Finish()
+
+	userId := "user-id"
+	req := dto.Pagination{Page: 1, Limit: 10}
+
+	cases := []struct {
+		name     string
+		setup    func() (res []*model.Transaction, meta *response.Meta, err error)
+		err      error
+		notLogin bool
+	}{
+		{
+			name: "Successful retrieval",
+			setup: func() (res []*model.Transaction, meta *response.Meta, err error) {
+				res = []*model.Transaction{
+					{ID: "1", UserID: userId, InstallmentAmount: 500000, Status: "success"},
+					{ID: "2", UserID: userId, InstallmentAmount: 1000000, Status: "pending"},
+				}
+				meta = &response.Meta{TotalItems: 2, CurrentPage: 1, PerPage: 10, TotalPages: 1}
+				mock.userRepo.EXPECT().ListTransactions(gomock.Any(), userId, gomock.Any()).Return(int64(2), res, nil)
+				return
+			},
+		},
+		{
+			name: "User not logged in",
+			setup: func() (res []*model.Transaction, meta *response.Meta, err error) {
+				err = response.Authorization(fiber.StatusForbidden, "FORBIDDEN", "You don't have permission to access this resource")
+				return
+			},
+			notLogin: true,
+		},
+		{
+			name: "Repository error",
+			setup: func() (res []*model.Transaction, meta *response.Meta, err error) {
+				errs := errors.New("repository error")
+				err = response.ErrorServer(response.MsgInternalServer, errs)
+				mock.userRepo.EXPECT().ListTransactions(gomock.Any(), userId, gomock.Any()).Return(int64(0), nil, errs)
+				return
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			if !tc.notLogin {
+				ctx = context.WithValue(ctx, "userid", userId)
+			}
+
+			expectedRes, expectedMeta, expectedErr := tc.setup()
+			res, meta, err := svc.GetTransactions(ctx, req)
+
+			if expectedErr == nil {
+				assert.NoError(t, err)
+			} else {
+				assert.True(t, err != nil)
+				assert.Equal(t, expectedErr, err)
+			}
+
+			if expectedRes != nil {
+				assert.NotNil(t, res)
+
+				assert.Equal(t, expectedRes, res)
+			}
+
+			if expectedMeta != nil {
+				assert.NotNil(t, meta)
+
+				assert.Equal(t, expectedMeta, meta)
 			}
 		})
 	}

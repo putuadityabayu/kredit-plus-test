@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	deleted_at TIMESTAMP NULL,
 
-	INDEX idx_users (deleted_at, created_at),
+	INDEX idx_users (deleted_at, created_at desc),
 	UNIQUE INDEX idx_users_nik (nik)
 );
 -- +goose StatementEnd

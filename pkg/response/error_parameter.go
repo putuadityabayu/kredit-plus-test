@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	ErrBadRequest        = "BAD_REQUEST"
-	ErrInsufficientLimit = "INSUFFICIENT_LIMIT"
+	ErrBadRequest     = "BAD_REQUEST"
+	MsgInvalidRequest = "Invalid request parameter"
+	ErrUnprocessable  = "UNPROCESSABLE_ENTITY"
 )
 
 type ErrorFields []FieldError

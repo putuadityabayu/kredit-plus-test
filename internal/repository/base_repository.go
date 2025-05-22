@@ -13,8 +13,8 @@ import (
 )
 
 type RepoRegistry struct {
-	UserRepository  UserRepository
-	LimitRepository TenorLimitsRepository
+	UserRepository        UserRepository
+	TransactionRepository TransactionRepository
 }
 
 type BaseRepository interface {
@@ -37,13 +37,22 @@ func (b *base) StartTransaction(ctx context.Context, fc func(ctx context.Context
 	})
 }
 
-func (b *base) getDatabase(ctx context.Context) *gorm.DB {
-	dbAny := ctx.Value("db")
-	if dbAny != nil {
-		dbGorm, ok := dbAny.(*gorm.DB)
-		if ok {
-			return dbGorm
+func (b *base) getDatabase(ctx context.Context, opts ...Option) *gorm.DB {
+	var getDB = func() *gorm.DB {
+		dbAny := ctx.Value("db")
+		if dbAny != nil {
+			dbGorm, ok := dbAny.(*gorm.DB)
+			if ok {
+				return dbGorm
+			}
 		}
+
+		return b.db
 	}
-	return b.db
+
+	db := getDB()
+	for _, opt := range opts {
+		db = opt(db)
+	}
+	return db
 }

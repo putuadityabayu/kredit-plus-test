@@ -18,7 +18,6 @@ import (
 
 const (
 	ErrNotFound = "NOT_FOUND"
-	MsgNotFound = "%s with %s `%s` not found"
 )
 
 func NotFound(message string, err ...error) ErrorResponse {
@@ -40,7 +39,7 @@ func NotfoundHelper(err error, message string, span ...SpanInterface) ErrorRespo
 	if len(span) > 0 {
 		span[0].RecordErrorHelper(err, "NotfoundHelper")
 	}
-	return ErrorServer("Internal server error", err)
+	return ErrorServer(MsgInternalServer, err)
 }
 
 func parseDuplicateValue(mysqlErr *mysql.MySQLError) (string, string, bool) {
@@ -74,5 +73,5 @@ func DatabaseHelper(err error, mapIndexKey map[string]string, span ...SpanInterf
 	if len(span) > 0 {
 		span[0].RecordErrorHelper(err, "NotfoundHelper")
 	}
-	return ErrorServer("Internal server error", err)
+	return ErrorServer(MsgInternalServer, err)
 }

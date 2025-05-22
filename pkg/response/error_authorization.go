@@ -9,11 +9,11 @@ package response
 
 const (
 	ErrUnauthorized = "UNAUTHORIZED"
-	ErrJwt          = "JWT_ERROR"
+	ErrForbidden    = "FORBIDDEN"
 
 	MsgMissingAuthorization = "Missing authorization token"
-	MsgExpiredToken         = "The token provided has expired"
 	MsgInvalidToken         = "The token provided is invalid"
+	MsgForbidden            = "You don't have permission to access this resource"
 )
 
 func Authorization(httpCode int, code string, msg string, err ...error) ErrorResponse {

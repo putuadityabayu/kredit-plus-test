@@ -9,11 +9,13 @@ package service
 
 import (
 	"context"
+	"github.com/gofiber/fiber/v2"
 	"go.portalnesia.com/utils"
 	"time"
 	"xyz/internal/dto"
 	"xyz/internal/model"
 	"xyz/internal/repository"
+	"xyz/pkg/helper"
 	"xyz/pkg/otel"
 	"xyz/pkg/response"
 	"xyz/pkg/validator"
@@ -22,23 +24,22 @@ import (
 type UserService interface {
 	Create(ctx context.Context, user dto.UserRequest) (*model.User, error)
 	GetByID(ctx context.Context, id string) (*model.User, error)
-	Update(ctx context.Context, id string, user dto.UserRequest) (*model.User, error)
-	GetTenorLimits(ctx context.Context, userid string) ([]model.TenorLimits, error)
+	Update(ctx context.Context, user dto.UserRequest) (*model.User, error)
+	GetTenorLimits(ctx context.Context) ([]*model.TenorLimits, error)
+	GetTransactions(ctx context.Context, req dto.Pagination) ([]*model.Transaction, *response.Meta, error)
 }
 
-type UserServiceImpl struct {
-	userRepository   repository.UserRepository
-	limitsRepository repository.TenorLimitsRepository
+type userServiceImpl struct {
+	userRepository repository.UserRepository
 }
 
-func NewUserService(userRepository repository.UserRepository, limitsRepository repository.TenorLimitsRepository) UserService {
-	return UserServiceImpl{
-		userRepository:   userRepository,
-		limitsRepository: limitsRepository,
+func NewUserService(userRepository repository.UserRepository) UserService {
+	return userServiceImpl{
+		userRepository: userRepository,
 	}
 }
 
-func (u UserServiceImpl) Create(ctx context.Context, req dto.UserRequest) (*model.User, error) {
+func (u userServiceImpl) Create(ctx context.Context, req dto.UserRequest) (*model.User, error) {
 	var span *otel.Span
 	ctx, span = otel.StartSpan(ctx, "UserService.Create")
 	defer span.End()
@@ -48,7 +49,7 @@ func (u UserServiceImpl) Create(ctx context.Context, req dto.UserRequest) (*mode
 	// validate request with validator
 	if err := validate.Struct(req); err != nil {
 		span.RecordErrorHelper(err, "validator")
-		return nil, response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", err)
+		return nil, response.ErrorParameter(response.ErrBadRequest, response.MsgInvalidRequest, err)
 	}
 
 	// next validation
@@ -78,7 +79,7 @@ func (u UserServiceImpl) Create(ctx context.Context, req dto.UserRequest) (*mode
 	// return error if there is any
 	if errs.Exist() {
 		span.RecordErrorHelper(errs, "validation")
-		return nil, response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", errs)
+		return nil, response.ErrorParameter(response.ErrBadRequest, response.MsgInvalidRequest, errs)
 	}
 
 	user := &model.User{
@@ -103,7 +104,7 @@ func (u UserServiceImpl) Create(ctx context.Context, req dto.UserRequest) (*mode
 	return user, nil
 }
 
-func (u UserServiceImpl) GetByID(ctx context.Context, id string) (*model.User, error) {
+func (u userServiceImpl) GetByID(ctx context.Context, id string) (*model.User, error) {
 	var span *otel.Span
 	ctx, span = otel.StartSpan(ctx, "UserService.GetByID")
 	defer span.End()
@@ -117,17 +118,22 @@ func (u UserServiceImpl) GetByID(ctx context.Context, id string) (*model.User, e
 	return user, nil
 }
 
-func (u UserServiceImpl) Update(ctx context.Context, id string, req dto.UserRequest) (*model.User, error) {
+func (u userServiceImpl) Update(ctx context.Context, req dto.UserRequest) (*model.User, error) {
 	var span *otel.Span
 	ctx, span = otel.StartSpan(ctx, "UserService.Update")
 	defer span.End()
+
+	userid := helper.GetValueContext(ctx, "userid", "")
+	if userid == "" {
+		return nil, response.Authorization(fiber.StatusForbidden, response.ErrForbidden, response.MsgForbidden)
+	}
 
 	validate := validator.New()
 
 	// validate request with validator
 	if err := validate.Struct(req); err != nil {
 		span.RecordErrorHelper(err, "validator")
-		return nil, response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", err)
+		return nil, response.ErrorParameter(response.ErrBadRequest, response.MsgInvalidRequest, err)
 	}
 
 	// next validation
@@ -142,7 +148,7 @@ func (u UserServiceImpl) Update(ctx context.Context, id string, req dto.UserRequ
 	// return error if there is any
 	if errs.Exist() {
 		span.RecordErrorHelper(err, "validation")
-		return nil, response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", errs)
+		return nil, response.ErrorParameter(response.ErrBadRequest, response.MsgInvalidRequest, errs)
 	}
 
 	var user *model.User
@@ -150,7 +156,7 @@ func (u UserServiceImpl) Update(ctx context.Context, id string, req dto.UserRequ
 		var errTx error
 
 		// get user by id
-		user, errTx = u.userRepository.GetByID(ctx, id)
+		user, errTx = u.userRepository.GetByID(ctx, userid)
 		if errTx != nil {
 			return response.NotfoundHelper(errTx, "user not found", span)
 		}
@@ -177,16 +183,42 @@ func (u UserServiceImpl) Update(ctx context.Context, id string, req dto.UserRequ
 	return user, nil
 }
 
-func (u UserServiceImpl) GetTenorLimits(ctx context.Context, userid string) ([]model.TenorLimits, error) {
+func (u userServiceImpl) GetTenorLimits(ctx context.Context) ([]*model.TenorLimits, error) {
 	var span *otel.Span
 	ctx, span = otel.StartSpan(ctx, "UserService.GetTenorLimits")
 	defer span.End()
 
-	tenorLimits, err := u.limitsRepository.ListByUserID(ctx, userid)
+	userid := helper.GetValueContext(ctx, "userid", "")
+	if userid == "" {
+		return nil, response.Authorization(fiber.StatusForbidden, response.ErrForbidden, response.MsgForbidden)
+	}
+
+	tenorLimits, err := u.userRepository.ListTenorLimits(ctx, userid)
 	if err != nil {
-		span.RecordErrorHelper(err, "repository.GetTenorLimits")
-		return nil, response.ErrorServer("Internal server error", err)
+		span.RecordErrorHelper(err, "repository.ListTenorLimits")
+		return nil, response.ErrorServer(response.MsgInternalServer, err)
 	}
 
 	return tenorLimits, nil
+}
+
+func (u userServiceImpl) GetTransactions(ctx context.Context, req dto.Pagination) ([]*model.Transaction, *response.Meta, error) {
+	var span *otel.Span
+	ctx, span = otel.StartSpan(ctx, "UserService.GetTransactions")
+	defer span.End()
+
+	userid := helper.GetValueContext(ctx, "userid", "")
+	if userid == "" {
+		return nil, nil, response.Authorization(fiber.StatusForbidden, response.ErrForbidden, response.MsgForbidden)
+	}
+
+	total, transactions, err := u.userRepository.ListTransactions(ctx, userid, repository.WithPagination(req))
+	if err != nil {
+		span.RecordErrorHelper(err, "repository.ListTransactions")
+		return nil, nil, response.ErrorServer(response.MsgInternalServer, err)
+	}
+
+	meta := req.Meta(total)
+
+	return transactions, &meta, nil
 }
