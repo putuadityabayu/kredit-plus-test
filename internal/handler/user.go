@@ -22,8 +22,8 @@ type UserHandler struct {
 	userSvc service.UserService
 }
 
-func NewUserHandler(userRepo repository.UserRepository) UserHandler {
-	userSvc := service.NewUserService(userRepo)
+func NewUserHandler(repo repository.RepoRegistry) UserHandler {
+	userSvc := service.NewUserService(repo.UserRepository, repo.LimitRepository)
 	return UserHandler{
 		userSvc: userSvc,
 	}
@@ -79,10 +79,28 @@ func (h UserHandler) Update(c *fiber.Ctx) error {
 		return response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", err)
 	}
 
-	user, err := h.userSvc.Update(c.UserContext(), userid, req)
+	user, err := h.userSvc.Update(ctx, userid, req)
 	if err != nil {
 		return err
 	}
 
 	return response.Success(c, user, fiber.StatusOK, "User updated successfully")
+}
+
+func (h UserHandler) ListNIK(c *fiber.Ctx) error {
+	ctx, span := otel.StartSpan(c.UserContext(), "UserHandler.Create")
+	defer span.End()
+	c.SetUserContext(ctx)
+	userid := helper.GetValueContext(c.UserContext(), "userid", "")
+
+	if userid == "" {
+		span.RecordErrorHelper(response.ErrorServer("", errors.New("missing userid")), "userid == \"\"")
+		return response.Authorization(fiber.StatusForbidden, "FORBIDDEN", "You don't have permission to access this resource")
+	}
+	limits, err := h.userSvc.GetTenorLimits(ctx, userid)
+	if err != nil {
+		return err
+	}
+
+	return response.Success(c, limits, fiber.StatusOK, "Tenor limits retrieved successfully")
 }

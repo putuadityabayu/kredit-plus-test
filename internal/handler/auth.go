@@ -20,8 +20,8 @@ type AuthHandler struct {
 	authSvc service.AuthService
 }
 
-func NewAuthHandler(userRepo repository.UserRepository) AuthHandler {
-	authSvc := service.NewAuthService(userRepo)
+func NewAuthHandler(repo repository.RepoRegistry) AuthHandler {
+	authSvc := service.NewAuthService(repo.UserRepository)
 	return AuthHandler{
 		authSvc: authSvc,
 	}

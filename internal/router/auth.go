@@ -13,9 +13,9 @@ import (
 	"xyz/internal/repository"
 )
 
-func AuthRouterV1(app *fiber.App, userRepo repository.UserRepository) {
+func AuthRouterV1(app *fiber.App, repo repository.RepoRegistry) {
 	routerV1 := app.Group("/v1")
-	h := handler.NewAuthHandler(userRepo)
+	h := handler.NewAuthHandler(repo)
 
 	routerV1.Post("/auth/login", h.Login)
 }

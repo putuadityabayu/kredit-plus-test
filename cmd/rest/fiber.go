@@ -96,10 +96,16 @@ func New(ctx context.Context) *Rest {
 	otel.InitTelemetry(ctx, "xyz-api")
 	db := config.InitDatabase()
 	userRepo := repository.NewUserRepository(db)
+	limitRepo := repository.NewTenorLimitsRepository(db)
+
+	repoRegistry := repository.RepoRegistry{
+		UserRepository:  userRepo,
+		LimitRepository: limitRepo,
+	}
 
 	// ROUTER
-	router.UserRouterV1(app, userRepo)
-	router.AuthRouterV1(app, userRepo)
+	router.UserRouterV1(app, repoRegistry)
+	router.AuthRouterV1(app, repoRegistry)
 
 	app.Use(func(c *fiber.Ctx) error {
 		return response.EndpointNotFound().Response(c)

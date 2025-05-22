@@ -25,7 +25,7 @@ import (
 
 func TestUser_Create(t *testing.T) {
 	mock := setupApp(t)
-	svc := service.NewUserService(mock.userRepo)
+	svc := service.NewUserService(mock.userRepo, mock.limitRepo)
 	defer mock.ctrl.Finish()
 
 	validate := validator.New()
@@ -169,7 +169,7 @@ func TestUser_Create(t *testing.T) {
 
 func TestUser_GetByID(t *testing.T) {
 	mock := setupApp(t)
-	svc := service.NewUserService(mock.userRepo)
+	svc := service.NewUserService(mock.userRepo, mock.limitRepo)
 	defer mock.ctrl.Finish()
 
 	cases := []struct {
@@ -243,7 +243,7 @@ func TestUser_GetByID(t *testing.T) {
 
 func TestUserService_Update(t *testing.T) {
 	mock := setupApp(t)
-	svc := service.NewUserService(mock.userRepo)
+	svc := service.NewUserService(mock.userRepo, mock.limitRepo)
 	defer mock.ctrl.Finish()
 
 	validate := validator.New()

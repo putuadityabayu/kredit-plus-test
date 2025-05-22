@@ -27,6 +27,8 @@ type User struct {
 	Date
 
 	Password string `json:"-" gorm:"column:password;type:varchar(255)"`
+
+	TenorLimits []TenorLimits `json:"tenor_limits,omitempty" gorm:"<-:false;foreignKey:user_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (u *User) TableName() string {

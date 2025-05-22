@@ -14,10 +14,11 @@ import (
 	"xyz/internal/repository"
 )
 
-func UserRouterV1(app *fiber.App, userRepo repository.UserRepository) {
+func UserRouterV1(app *fiber.App, repo repository.RepoRegistry) {
 	routerV1 := app.Group("/v1")
-	h := handler.NewUserHandler(userRepo)
+	h := handler.NewUserHandler(repo)
 
+	routerV1.Get("/user/tenor", middleware.AuthorizationCheck, h.ListNIK)
 	routerV1.Get("/user/:id", middleware.AuthorizationCheck, h.GetByID)
 	routerV1.Post("/user", h.Create)
 	routerV1.Put("/user", middleware.Authorization, h.Update)

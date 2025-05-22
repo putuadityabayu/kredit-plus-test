@@ -12,6 +12,11 @@ import (
 	"gorm.io/gorm"
 )
 
+type RepoRegistry struct {
+	UserRepository  UserRepository
+	LimitRepository TenorLimitsRepository
+}
+
 type BaseRepository interface {
 	StartTransaction(ctx context.Context, fc func(ctx context.Context) error) error
 }

@@ -23,15 +23,18 @@ type UserService interface {
 	Create(ctx context.Context, user dto.UserRequest) (*model.User, error)
 	GetByID(ctx context.Context, id string) (*model.User, error)
 	Update(ctx context.Context, id string, user dto.UserRequest) (*model.User, error)
+	GetTenorLimits(ctx context.Context, userid string) ([]model.TenorLimits, error)
 }
 
 type UserServiceImpl struct {
-	userRepository repository.UserRepository
+	userRepository   repository.UserRepository
+	limitsRepository repository.TenorLimitsRepository
 }
 
-func NewUserService(userRepository repository.UserRepository) UserService {
+func NewUserService(userRepository repository.UserRepository, limitsRepository repository.TenorLimitsRepository) UserService {
 	return UserServiceImpl{
-		userRepository: userRepository,
+		userRepository:   userRepository,
+		limitsRepository: limitsRepository,
 	}
 }
 
@@ -94,7 +97,7 @@ func (u UserServiceImpl) Create(ctx context.Context, req dto.UserRequest) (*mode
 	err = u.userRepository.Create(ctx, user)
 	if err != nil {
 		span.RecordErrorHelper(err, "Create data error")
-		return nil, response.ErrorServer("Internal server error", err)
+		return nil, response.DatabaseHelper(err, map[string]string{"idx_users_nik": "NIK"}, span)
 	}
 
 	return user, nil
@@ -161,7 +164,7 @@ func (u UserServiceImpl) Update(ctx context.Context, id string, req dto.UserRequ
 		// update user
 		errTx = u.userRepository.Save(ctx, user)
 		if errTx != nil {
-			return response.ErrorServer("Internal server error", errTx)
+			return response.DatabaseHelper(errTx, map[string]string{"idx_user_nik": "NIK"}, span)
 		}
 
 		return nil
@@ -172,4 +175,18 @@ func (u UserServiceImpl) Update(ctx context.Context, id string, req dto.UserRequ
 	}
 
 	return user, nil
+}
+
+func (u UserServiceImpl) GetTenorLimits(ctx context.Context, userid string) ([]model.TenorLimits, error) {
+	var span *otel.Span
+	ctx, span = otel.StartSpan(ctx, "UserService.GetTenorLimits")
+	defer span.End()
+
+	tenorLimits, err := u.limitsRepository.ListByUserID(ctx, userid)
+	if err != nil {
+		span.RecordErrorHelper(err, "repository.GetTenorLimits")
+		return nil, response.ErrorServer("Internal server error", err)
+	}
+
+	return tenorLimits, nil
 }
