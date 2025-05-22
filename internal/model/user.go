@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 	pncrypto "go.portalnesia.com/crypto"
 	"go.portalnesia.com/nullable"
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -30,6 +31,12 @@ type User struct {
 
 func (u *User) TableName() string {
 	return "users"
+}
+
+func (u *User) AfterDelete(tx *gorm.DB) error {
+	return tx.Model(&User{}).Where("id=?", u.ID).Unscoped().Updates(map[string]string{
+		"nik": u.NIK + "--deleted",
+	}).Error
 }
 
 func (u *User) HashPassword(passwordString string) {
