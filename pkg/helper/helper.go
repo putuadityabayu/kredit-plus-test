@@ -10,7 +10,10 @@ package helper
 import (
 	"context"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"math/rand"
+	"net"
+	"strings"
 	"time"
 )
 
@@ -58,4 +61,29 @@ func GetTransactionAmount(otr float64, tenor int) (interestAmount, adminFee floa
 	totalAmount = otr + interestAmount + adminFee
 	installmentAmount = totalAmount / float64(tenor)
 	return
+}
+
+func GetIP(c *fiber.Ctx) string {
+	// Check cloudflare
+	if ip := c.Get("CF-Connecting-IP"); ip != "" {
+		return ip
+	}
+	// Prioritaskan X-Forwarded-For
+	forwarded := c.Get("X-Forwarded-For")
+	if forwarded != "" {
+		// bisa berisi multiple IP, ambil yang pertama
+		parts := strings.Split(forwarded, ",")
+		return strings.TrimSpace(parts[0])
+	}
+	// fallback ke X-Real-IP
+	realIP := c.Get("X-Real-IP")
+	if realIP != "" {
+		return realIP
+	}
+	// fallback terakhir: RemoteAddr (tidak direkomendasikan di belakang proxy)
+	ip, _, err := net.SplitHostPort(c.Context().RemoteAddr().String())
+	if err != nil {
+		return c.Context().RemoteAddr().String()
+	}
+	return ip
 }

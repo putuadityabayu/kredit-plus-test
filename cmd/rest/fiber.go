@@ -22,6 +22,7 @@ import (
 	"gorm.io/gorm"
 	"runtime/debug"
 	"time"
+	"xyz/internal/middleware"
 	"xyz/internal/repository"
 	"xyz/internal/router"
 	"xyz/pkg/config"
@@ -35,6 +36,10 @@ type Rest struct {
 }
 
 func New(ctx context.Context) *Rest {
+	otel.InitTelemetry(ctx, "xyz-api")
+	db := config.InitDatabase()
+	fiberStorage := config.InitFiberStorage()
+
 	fiber.SetParserDecoder(fiber.ParserConfig{
 		IgnoreUnknownKeys: true,
 		ParserType:        registerDecoder(),
@@ -86,6 +91,8 @@ func New(ctx context.Context) *Rest {
 		return c.Next()
 	})
 
+	app.Use(middleware.RateLimit(fiberStorage))
+
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"health": "ok",
@@ -93,8 +100,6 @@ func New(ctx context.Context) *Rest {
 	})
 
 	// REPO
-	otel.InitTelemetry(ctx, "xyz-api")
-	db := config.InitDatabase()
 	userRepo := repository.NewUserRepository(db)
 	transactionRepo := repository.NewTransactionRepository(db)
 
