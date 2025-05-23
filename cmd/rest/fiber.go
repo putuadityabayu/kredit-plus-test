@@ -13,9 +13,11 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/earlydata"
 	"github.com/gofiber/fiber/v2/middleware/etag"
 	"github.com/gofiber/fiber/v2/middleware/idempotency"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	recover2 "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/spf13/viper"
@@ -36,6 +38,7 @@ type Rest struct {
 }
 
 func New(ctx context.Context) *Rest {
+	appEnv := viper.GetString("app_env")
 	otel.InitTelemetry(ctx, "xyz-api")
 	db := config.InitDatabase()
 	fiberStorage := config.InitFiberStorage()
@@ -79,6 +82,11 @@ func New(ctx context.Context) *Rest {
 		},
 	}))
 
+	// Compress
+	app.Use(compress.New(compress.Config{
+		Level: compress.LevelBestSpeed,
+	}))
+
 	app.Use(requestid.New())
 	app.Use(etag.New())
 	app.Use(earlydata.New())
@@ -98,6 +106,10 @@ func New(ctx context.Context) *Rest {
 			"health": "ok",
 		})
 	})
+
+	if appEnv == "local" {
+		app.Use(logger.New())
+	}
 
 	// REPO
 	userRepo := repository.NewUserRepository(db)
