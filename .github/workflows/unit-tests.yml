@@ -1,0 +1,33 @@
+name: Go Unit Tests
+
+on:
+  push:
+    branches:
+      - main # Trigger the workflow on pushes to the 'main' branch
+  pull_request:
+    branches:
+      - main # Trigger the workflow on pull requests targeting the 'main' branch
+
+jobs:
+  test:
+    name: Run Go Unit Tests
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner provided by GitHub Actions
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4 # Action to check out your repository code
+
+      - name: Set up Go
+        uses: actions/setup-go@v5 # Action to set up the Go environment
+        with:
+          go-version: '1.23' # Specify the Go version to use
+
+      - name: Install golang/mock mockgen
+        # Installs the mockgen tool, used for generating mock interfaces
+        run: go install github.com/golang/mock/mockgen@v1.6.0
+
+      - name: Generate Mocks
+        run: make mock
+
+      - name: Run Unit Tests
+        run: make test

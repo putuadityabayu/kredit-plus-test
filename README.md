@@ -1,3 +1,5 @@
+![Unit Tests](https://github.com/putuadityabayu/kredit-plus-test/actions/workflows/unit-tests.yml/badge.svg)
+
 # PT XYZ Multifinance API Application
 
 ## Project Overview
