@@ -102,10 +102,10 @@ func (h UserHandler) ListTransactions(c *fiber.Ctx) error {
 		return response.ErrorParameter(response.ErrBadRequest, "Invalid request parameter", err)
 	}
 
-	limits, meta, err := h.userSvc.GetTransactions(ctx, req)
+	limits, meta, err := h.userSvc.GetTransactions(ctx, &req)
 	if err != nil {
 		return err
 	}
 
-	return response.Success(c, limits, meta, fiber.StatusOK, "Tenor limits retrieved successfully")
+	return response.Success(c, limits, meta, fiber.StatusOK, "Transactions retrieved successfully")
 }

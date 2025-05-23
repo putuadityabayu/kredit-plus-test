@@ -87,7 +87,7 @@ func (t transactionServiceImpl) Create(ctx context.Context, req dto.TransactionR
 		trx.InterestAmount, trx.AdminFee, trx.InstallmentAmount, totalAmount = helper.GetTransactionAmount(req.OTR, req.Tenor)
 
 		// get limit
-		limit, err = t.transactionRepository.GetLimit(ctx, user.ID, req.Tenor, repository.WithLockTable("user_tenor_limits"))
+		limit, err = t.transactionRepository.GetLimit(ctx, user.ID, req.Tenor, repository.WithLockTable())
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return response.ErrorParameter(response.ErrInsufficientLimit, response.MsgInsufficientLimit, fiber.StatusUnprocessableEntity)

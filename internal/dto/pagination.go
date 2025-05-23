@@ -17,7 +17,7 @@ type Pagination struct {
 	Limit int `json:"per_page"`
 }
 
-func (p Pagination) Meta(totalItems int64) response.Meta {
+func (p *Pagination) Meta(totalItems int64) response.Meta {
 	return response.Meta{
 		TotalItems:  totalItems,
 		TotalPages:  int(math.Ceil(float64(totalItems) / float64(p.Limit))),

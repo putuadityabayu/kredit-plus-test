@@ -26,7 +26,7 @@ type UserService interface {
 	GetByID(ctx context.Context, id string) (*model.User, error)
 	Update(ctx context.Context, user dto.UserRequest) (*model.User, error)
 	GetTenorLimits(ctx context.Context) ([]*model.TenorLimits, error)
-	GetTransactions(ctx context.Context, req dto.Pagination) ([]*model.Transaction, *response.Meta, error)
+	GetTransactions(ctx context.Context, req *dto.Pagination) ([]*model.Transaction, *response.Meta, error)
 }
 
 type userServiceImpl struct {
@@ -202,7 +202,7 @@ func (u userServiceImpl) GetTenorLimits(ctx context.Context) ([]*model.TenorLimi
 	return tenorLimits, nil
 }
 
-func (u userServiceImpl) GetTransactions(ctx context.Context, req dto.Pagination) ([]*model.Transaction, *response.Meta, error) {
+func (u userServiceImpl) GetTransactions(ctx context.Context, req *dto.Pagination) ([]*model.Transaction, *response.Meta, error) {
 	var span *otel.Span
 	ctx, span = otel.StartSpan(ctx, "UserService.GetTransactions")
 	defer span.End()
