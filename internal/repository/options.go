@@ -20,18 +20,15 @@ type options struct {
 type Option func(db *gorm.DB) *gorm.DB
 
 // WithLockTable locks the table
-func WithLockTable(lockTable string) Option {
+func WithLockTable() Option {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Clauses(clause.Locking{
 			Strength: "UPDATE",
-			Table: clause.Table{
-				Name: lockTable,
-			},
 		})
 	}
 }
 
-func WithPagination(req dto.Pagination) Option {
+func WithPagination(req *dto.Pagination) Option {
 	return func(db *gorm.DB) *gorm.DB {
 		if req.Page == 0 {
 			req.Page = 1

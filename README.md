@@ -29,16 +29,38 @@ Based on the case study, this application must be able to:
 
 1.  **Dockerize the built application.**
 
-## Solution Architecture
+---
 
-This application is designed as a **RESTful API** with a layered architecture (Clean Code Architecture) to ensure *separation of concerns*, *maintainability*, and *testability*.
+## Architecture Overview
 
-* **Stateless API:** The application is completely *stateless*, allowing easy *horizontal scaling* by adding more application *instances* behind a *load balancer*. Authentication uses JSON Web Tokens (JWT) for efficiency and security.
-* **Database:** Uses MySQL as the database.
-* **ORM:** GORM is used as an Object-Relational Mapper for efficient and secure database interaction.
-* **Golang Concurrency:** Leverages Golang's *goroutines* and *non-blocking I/O* to handle many requests concurrently with efficiency.
+This application follows a common layered architecture pattern, designed for maintainability, scalability, and observability. The core components and their interactions are as follows:
 
-For a visual representation of the architecture, please refer to the architecture diagram included in the project results.
+1.  **Client:** The end-users interacting with the application, typically via web or mobile interfaces.
+
+2.  **API Gateway or Reverse Proxy:** This component acts as the single entry point for all client requests. It handles traffic routing to the backend application, load balancing, and can manage initial request filtering. While the backend application handles authentication and specific routing logic, an external API Gateway or Reverse Proxy might provide benefits like SSL termination, advanced load balancing, or a central point for cross-cutting concerns (e.g., global rate limiting).
+
+3.  **Backend Application:** The core of the system, written in Golang, containing the main business logic, specific **routing**, and **authentication/authorization handling**. It's structured into distinct layers:
+    * **Presentation Layer (Handlers):** Responsible for receiving incoming requests, performing initial input validation, handling **routing**, implementing **authentication/authorization** logic, and interacting with **Redis** for **rate limiting**. It coordinates with the service layer.
+    * **Service Layer:** Encapsulates the primary business rules and logic. It orchestrates operations by interacting with the data access layer.
+    * **Data Access Layer (GORM):** Manages interactions with the **MySQL database**, performing CRUD (Create, Read, Update, Delete) operations and ensuring data integrity, utilizing **GORM** as the ORM.
+
+4.  **Redis:** An in-memory data store primarily used here for efficient **rate limiting**. The backend application communicates with Redis to track and enforce access limits for users or endpoints.
+
+5.  **Database (MySQL):** The persistent storage for application data, including consumer information, credit limits, and transaction records.
+
+6.  **Observability Stack:** Designed for monitoring and understanding the application's behavior in real-time.
+    * **OpenTelemetry Collector:** Gathers **traces**, **metrics**, and **logs** from the backend application, processes them, and forwards them to the tracing backend.
+    * **Jaeger:** A distributed tracing system that stores and visualizes **traces**, helping to troubleshoot performance issues and understand request flows across services.
+
+### Architecture Diagram
+
+The overall architecture can be visualized as follows:
+
+![Application Architecture Diagram](./docs/architecture.png)
+
+*Note: In this architecture, while an API Gateway or Reverse Proxy might sit in front, the detailed routing and authentication are handled directly within the Backend Application. Redis is utilized for efficient rate limiting.*
+
+---
 
 ## Database Design
 
@@ -52,6 +74,8 @@ Detailed database schema and relationships between tables can be seen in the Ent
 
 ![ERD](./docs/ERD.png)
 
+---
+
 ## API Endpoints
 
 Here are some of the main *endpoints* provided by this API:
@@ -63,9 +87,9 @@ Here are some of the main *endpoints* provided by this API:
 * **Request Body Example:**
     ```json
     {
-        "otr": 450000.00,
-        "asset_name": "Motorcycle",
-        "tenor": 3
+        "otr": 200000.00,
+        "asset_name": "Laptop",
+        "tenor": 6
     }
     ```
 * **Success Response (Status: `201 Created`):**
@@ -74,12 +98,19 @@ Here are some of the main *endpoints* provided by this API:
         "status": "success",
         "message": "Transaction created successfully",
         "data": {
-            "id": "trx-uuid-xyz",
-            "contract_number": "TRX-20250520-001",
-            "user_id": "user-id-123",
-            "installment_amount": 166666.67,
-            "status": "Approved",
-            "transaction_date": "2025-05-20T22:00:00Z"
+            "id": "0196fdc1-c9c7-7061-81ad-ca2b81304a04",
+            "contract_number": "TRX-20250523222737927-8177",
+            "user_id": "0196f7ef-49de-79e9-b5a6-227b15de5240",
+            "otr": 200000,
+            "admin_fee": 2040,
+            "installment_amount": 34340,
+            "interest_amount": 4000,
+            "asset_name": "Laptop",
+            "tenor": 6,
+            "transaction_date": "2025-05-23T22:27:37.927025+07:00",
+            "status": "pending",
+            "created_at": "2025-05-23T22:27:37.927025+07:00",
+            "updated_at": "2025-05-23T22:27:37.927025+07:00"
         }
     }
     ```
@@ -225,42 +256,44 @@ Here are some of the main *endpoints* provided by this API:
     ```json
     {
         "status": "success",
-        "message": "User transactions successfully retrieved.",
+        "message": "Transactions retrieved successfully",
         "data": [
             {
-                "id": "trx-uuid-001",
-                "contract_number": "TRX-20250520-001",
-                "user_id": "user-id-123",
-                "otr": 450000.00,
-                "admin_fee": 20000.00,
-                "installment_amount": 166666.67,
-                "interest_amount": 30000.00,
+                "id": "0196fdc1-2ba4-7a06-95c4-06d46bdf4396",
+                "contract_number": "TRX-20250523222657444-9989",
+                "user_id": "0196f7ef-49de-79e9-b5a6-227b15de5240",
+                "otr": 400000,
+                "admin_fee": 4080,
+                "installment_amount": 137360,
+                "interest_amount": 8000,
                 "asset_name": "Motorcycle",
                 "tenor": 3,
-                "transaction_date": "2025-05-20T22:00:00Z",
-                "status": "Approved"
+                "transaction_date": "2025-05-23T15:26:57Z",
+                "status": "pending",
+                "created_at": "2025-05-23T15:26:57Z",
+                "updated_at": "2025-05-23T15:26:57Z"
             },
             {
-                "id": "trx-uuid-002",
-                "contract_number": "TRX-20250520-002",
-                "user_id": "user-id-123",
-                "otr": 150000.00,
-                "admin_fee": 5000.00,
-                "installment_amount": 77500.00,
-                "interest_amount": 10000.00,
-                "asset_name": "Refrigerator",
-                "tenor": 2,
-                "transaction_date": "2025-05-18T10:30:00Z",
-                "status": "Approved"
+                "id": "0196fdc1-c9c7-7061-81ad-ca2b81304a04",
+                "contract_number": "TRX-20250523222737927-8177",
+                "user_id": "0196f7ef-49de-79e9-b5a6-227b15de5240",
+                "otr": 200000,
+                "admin_fee": 2040,
+                "installment_amount": 34340,
+                "interest_amount": 4000,
+                "asset_name": "Laptop",
+                "tenor": 6,
+                "transaction_date": "2025-05-23T15:27:37Z",
+                "status": "pending",
+                "created_at": "2025-05-23T15:27:37Z",
+                "updated_at": "2025-05-23T15:27:37Z"
             }
         ],
         "meta": {
             "total_items": 2,
             "total_pages": 1,
             "current_page": 1,
-            "per_page": 10,
-            "next_page_url": null,
-            "prev_page_url": null
+            "per_page": 10
         }
     }
     ```
@@ -274,6 +307,8 @@ Here are some of the main *endpoints* provided by this API:
     }
     ```
 
+---
+
 ## Concurrent Transaction Handling
 
 On the `POST /api/v1/transactions` endpoint, concurrent transaction handling is crucial for maintaining the integrity of consumer credit limits. This is implemented using:
@@ -284,6 +319,8 @@ On the `POST /api/v1/transactions` endpoint, concurrent transaction handling is 
 Here is the *flowchart* for the new transaction submission process, highlighting decision points and concurrency handling:
 
 ![Flowchart](./docs/flowchart.png)
+
+---
 
 ## Security Attack Prevention (OWASP Top 10)
 
@@ -298,6 +335,8 @@ Several security prevention measures are adopted:
 3.  **A04:2021 – Insecure Design (Sensitive Data Exposure):**
   * It is recommended to always use **HTTPS (TLS)** in *production deployments* to encrypt all communication between clients and the server.
   * Error messages returned to the client are general and do not disclose sensitive internal system details.
+
+---
 
 ## Unit Testing
 

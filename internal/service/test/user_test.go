@@ -504,7 +504,7 @@ func TestUserService_GetTransactions(t *testing.T) {
 			}
 
 			expectedRes, expectedMeta, expectedErr := tc.setup()
-			res, meta, err := svc.GetTransactions(ctx, req)
+			res, meta, err := svc.GetTransactions(ctx, &req)
 
 			if expectedErr == nil {
 				assert.NoError(t, err)
